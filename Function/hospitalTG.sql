@@ -6,9 +6,9 @@ WHERE d.Building = 5
   AND w.Places >= 5
   AND EXISTS (
       SELECT 1
-      FROM Wards w2
-      JOIN Departments d2 ON w2.DepartmentId = d2.Id
-      WHERE d2.Building = 5 AND w2.Places > 15
+      FROM Wards war
+      JOIN Departments dep ON war.DepartmentId = dep.Id
+      WHERE dep.Building = 5 AND war.Places > 15
   );
 
 -- 2
