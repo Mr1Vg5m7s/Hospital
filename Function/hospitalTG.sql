@@ -1,68 +1,91 @@
---1
-SELECT D.Name, D.Surname, S.Name AS Specialization
-FROM Doctors D
-JOIN DoctorsSpecializations DS ON D.Id = DS.DoctorId
-JOIN Specializations S ON DS.SpecializationId = S.Id;
---2
-SELECT D.Surname, (D.Salary + D.Premium) AS TotalSalary
- FROM Doctors D
- LEFT JOIN Vacations V ON D.Id = V.DoctorId
-WHERE V.Id IS NULL;
+-- 1.
+SELECT w.Name, w.Places
+FROM Wards w
+JOIN Departments d ON w.DepartmentId = d.Id
+WHERE d.Building = 5
+  AND w.Places >= 5
+  AND EXISTS (
+      SELECT 1
+      FROM Wards w2
+      JOIN Departments d2 ON w2.DepartmentId = d2.Id
+      WHERE d2.Building = 5 AND w2.Places > 15
+  );
 
---3
-SELECT W.Name
-FROM Wards W
-JOIN Departments D ON W.DepartmentId = D.Id
-WHERE D.Name = 'Stark Industries';
+-- 2
+SELECT DISTINCT d.Name
+FROM Departments d
+JOIN Wards w ON w.DepartmentId = d.Id
+JOIN DoctorsExaminations de ON de.WardId = w.Id
+ WHERE de.Date >= DATEADD(DAY, -7, GETDATE());
 
---4
-SELECT DISTINCT Dep.Name
-FROM Departments Dep
-JOIN Donations Don ON Dep.Id = Don.DepartmentId
-JOIN Sponsors S ON Don.SponsorId = S.Id
-WHERE S.Name = 'Umbrella';
---5
---
---6
-SELECT DISTINCT Doc.Surname, Dep.Name AS Department
-FROM Doctors Doc
-JOIN DoctorsSpecializations DS ON Doc.Id = DS.DoctorId
-JOIN Specializations S ON DS.SpecializationId = S.Id
-JOIN Wards W ON W.DepartmentId = (SELECT TOP 1 DepartmentId FROM Wards) 
-JOIN Departments Dep ON W.DepartmentId = Dep.Id;
+-- 3
+SELECT di.Name
+FROM Diseases di
+LEFT JOIN DoctorsExaminations de ON de.DiseaseId = di.Id
+ WHERE de.Id IS NULL;
 
---7
-SELECT W.Name AS Ward, Dep.Name AS Department
- FROM Doctors Doc
- JOIN DoctorsSpecializations DS ON Doc.Id = DS.DoctorId
- JOIN Wards W ON W.DepartmentId = (SELECT TOP 1 DepartmentId FROM Wards)
- JOIN Departments Dep ON Dep.Id = W.DepartmentId
- WHERE Doc.Name = 'Tyler' AND Doc.Surname = 'Durden';
+SELECT d.Name  + d.Surname AS FullName
+FROM Doctors d
+LEFT JOIN DoctorsExaminations de ON de.DoctorId = d.Id
+ WHERE de.Id IS NULL;
 
---8
-SELECT DISTINCT Dep.Name AS Department, Doc.Surname AS Doctor
-FROM Departments Dep
-JOIN Donations Don ON Dep.Id = Don.DepartmentId
-JOIN Doctors Doc ON 1 = 1
-WHERE Don.Amount > 100000;
+-- 5
+SELECT d.Name
+FROM Departments d
+LEFT JOIN Wards w ON w.DepartmentId = d.Id
+LEFT JOIN DoctorsExaminations docE ON docE.WardId = w.Id
+ WHERE docE.Id IS NULL;
 
---9
-SELECT DISTINCT Dep.Name
-FROM Departments Dep
-JOIN Wards W ON Dep.Id = W.DepartmentId
-JOIN Doctors Doc ON 1 = 1
-WHERE Doc.Premium = 0;
+-- 6
+SELECT d.Surname
+FROM Doctors d
+JOIN Interns i ON i.DoctorId = d.Id;
 
---10
-SELECT S.Name AS Specialization
-FROM Specializations S
-WHERE S.Id IN (SELECT SpecializationId FROM DoctorsSpecializations);
---11
-SELECT DISTINCT Dep.Name AS Department, S.Name AS Disease
-FROM Departments Dep
-JOIN Specializations S ON 1 = 1
-WHERE 1 = 1;
---
-SELECT DISTINCT Dep.Name AS Department, W.Name AS Ward
-FROM Departments Dep
-JOIN Wards W ON Dep.Id = W.DepartmentId;
+-- 7.
+SELECT d.Surname
+FROM Doctors d
+JOIN Interns i ON i.DoctorId = d.Id
+ WHERE d.Salary > (SELECT Salary FROM Doctors);
+
+-- 8. 
+SELECT w.Name
+FROM Wards w
+ WHERE w.Places > ALL (
+     SELECT w2.Places
+     FROM Wards w2
+     JOIN Departments d ON w2.DepartmentId = d.Id
+     WHERE d.Building = 3
+);
+
+-- 9.
+SELECT DISTINCT d.Surname
+FROM Doctors d
+JOIN DoctorsExaminations de ON de.DoctorId = d.Id
+JOIN Wards w ON de.WardId = w.Id
+JOIN Departments dep ON w.DepartmentId = dep.Id
+ WHERE dep.Name IN ('Ophthalmology', 'Physiotherapy');
+
+-- 10. 
+SELECT DISTINCT dep.Name
+FROM Departments dep
+JOIN Wards w ON w.DepartmentId = dep.Id
+JOIN DoctorsExaminations de ON de.WardId = w.Id
+JOIN Doctors d ON de.DoctorId = d.Id
+ WHERE d.Id IN (SELECT DoctorId FROM Interns)
+   AND d.Id IN (SELECT DoctorId FROM Professors);
+
+-- 11. 
+SELECT d.Name + d.Surname AS FullName, dep.Name AS Department
+FROM Doctors d
+JOIN DoctorsExaminations de ON de.DoctorId = d.Id
+JOIN Wards w ON de.WardId = w.Id
+JOIN Departments dep ON w.DepartmentId = dep.Id
+ WHERE dep.Financing > 20000;
+
+-- 12. 
+
+-- 13. 
+SELECT di.Name, COUNT(de.Id) AS ExaminationsCount
+FROM Diseases di
+LEFT JOIN DoctorsExaminations de ON de.DiseaseId = di.Id
+GROUP BY di.Name;
